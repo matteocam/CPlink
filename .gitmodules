@@ -1,0 +1,6 @@
+[submodule "cpsnarks-set"]
+	path = cpsnarks-set
+	url = https://github.com/kobigurk/cpsnarks-set.git
+[submodule "cpsnarks-set-zexe"]
+	path = cpsnarks-set-zexe
+	url = https://github.com/kobigurk/cpsnarks-set-zexe.git
