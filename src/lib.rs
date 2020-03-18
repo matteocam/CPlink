@@ -1,4 +1,3 @@
-#![feature(range_contains)]
 #[macro_use]
 
 extern crate cute;
@@ -6,17 +5,30 @@ extern crate cute;
 mod matrix;
 mod snark;
 
-
-
 extern crate bn;
 extern crate rand;
 
+extern crate rug;
+extern crate algebra;
+
+extern crate rand_xorshift;
+
 use bn::*;
 
-use matrix::*;
-use snark::*;
+use crate::matrix::*;
+use crate::snark::*;
+
+use cpsnarks_set::commitments::{
+    integer::IntegerCommitment, pedersen::PedersenCommitment, Commitment,
+};
 
 pub fn test() {
+    
+    use rug::Integer;
+    use algebra::jubjub::JubJubProjective;
+    use rand_xorshift::XorShiftRng;
+    use rand::SeedableRng;
+
     let rng = rand::thread_rng();
 
     let mut pp = PP {l:1, t: 2, rng:rng};

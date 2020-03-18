@@ -1,19 +1,31 @@
 [package]
-name = "subspace_snark"
+name = "cplink"
 version = "0.0.1"
 authors = ["Matteo Campanelli <matteo.campanelli@gmail.com>"]
+edition = "2018"
 
 [dependencies]
 bn = "0.4.3"
-rand = "~0.3.14"
 cute = "0.3.0"
 
-  
+accumulator = { path = "./accumulator" }
+quick-error = "1.2.3"
+rug = "1.7.0"
+algebra-core = { path = "./zexe/algebra-core" }
+algebra = { path = "./zexe/algebra", features = ["jubjub"]}
+merlin = "2.0.0"
+rand = { version = "0.7"}
+cpsnarks-set = { path = "./cpsnarks-set" }
+rand_xorshift = "0.2"
+
+
+[dev-dependencies]
+
 
 [lib]
-name = "subspace_snark"
+name = "cplink"
 path = "src/lib.rs"
 
 [[bin]]
-name = "subspace_snark_bin"
+name = "cplink_bin"
 path = "src/bin.rs"

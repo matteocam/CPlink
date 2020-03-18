@@ -1,7 +1,7 @@
 extern crate bn;
-extern crate subspace_snark;
+extern crate cplink;
 
-use subspace_snark::test;
+use cplink::test;
 
 pub fn main() {
     test();
