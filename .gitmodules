@@ -4,3 +4,6 @@
 [submodule "cpsnarks-set-zexe"]
 	path = cpsnarks-set-zexe
 	url = https://github.com/kobigurk/cpsnarks-set-zexe.git
+[submodule "cpsnarks-set-accumulator"]
+	path = cpsnarks-set-accumulator
+	url = https://github.com/kobigurk/cpsnarks-set-accumulator.git
