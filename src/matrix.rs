@@ -1,15 +1,14 @@
-use bn::*;
-use std::ops::{Mul,Add};
-
-
-pub type VecG = Vec<G1>;
+use std::ops::{Mul,AddAssign};
+use algebra_core::PairingEngine;
+use algebra::ProjectiveCurve;
+use algebra::Zero;
 
 pub struct Matrix<T>
 {
     _m: Vec<T>,
-pub    nr: usize,
-pub    nc: usize,
-pub    N: usize
+    pub    nr: usize,
+    pub    nc: usize,
+    pub    N: usize
 }
 
 impl<T: Copy> Matrix<T> {
@@ -39,31 +38,39 @@ impl<T: Copy> Matrix<T> {
     }
 }
 
-
-pub fn inner_product<T:Mul<U,Output = T>+Add<Output=T>+Copy, U:Copy>(v: &Vec<U>, w: &Vec<T>, zero:T) -> T
+pub trait SparseLinAlgebra<PE: PairingEngine>
 {
-    let mut res:T = zero;
-    for i in 0..v.len() {
-        let tmp:T = w[i]*v[i];
-        res = res + tmp;
-    }
-    res
-}
 
-pub fn vector_matrix_mult<T: Mul<U,Output = T>+Add<Output=T>+Copy,U:Copy>(v: &Vec<U>, m:&Matrix<T>, res: &mut Vec<T>, zero:T) {
-    // the result should contain every column of m multiplied by v
-    for c in 0..m.nc {
-        res.push(inner_product(&v, &m.get_col(c), zero));
+    fn inner_product(v: &Vec<PE::Fr>, w: &Vec<PE::G1Projective>) -> PE::G1Projective
+    {
+        assert_eq!(v.len(), w.len());
+        let mut res:PE::G1Projective = PE::G1Projective::zero();
+        for i in 0..v.len() {
+            let tmp = w[i].mul(v[i]);
+            res.add_assign(&tmp);
+        }
+        res
     }
 
-}
+    fn vector_matrix_mult(v: &Vec<PE::Fr>, m:&Matrix<PE::G1Projective>, res: &mut Vec<PE::G1Projective>) {
+        // the result should contain every column of m multiplied by v
+        for c in 0..m.nc {
+            res.push(Self::inner_product(&v, &m.get_col(c)));
+        }
+    
+    }
 
-pub fn scalar_vector_mult<T: Mul<Output = T>+Copy>(a: &T, v: &Vec<T>, res: & mut Vec<T>)
-{
-    for i in 0..v.len() {
-        res.push((*a * v[i]));
+    fn scalar_vector_mult(a: &PE::Fr, v: &Vec<PE::Fr>, res: &mut Vec<PE::Fr>)
+    {
+        for i in 0..v.len() {
+            let x:PE::Fr = a.mul(&v[i]);
+            res.push(x);
+        }
     }
 }
+
+/*
+
 
 
 
@@ -110,3 +117,5 @@ mod tests {
     }
 
 }
+
+*/

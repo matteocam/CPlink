@@ -5,7 +5,6 @@ authors = ["Matteo Campanelli <matteo.campanelli@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-bn = "0.4.3"
 cute = "0.3.0"
 
 accumulator = { path = "./accumulator" }

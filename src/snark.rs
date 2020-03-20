@@ -1,86 +1,130 @@
-extern crate bn;
+//extern crate bn;
 extern crate rand;
 
-use bn::*;
-use rand::rngs::ThreadRng;
+//use bn::*;
+use rand::Rng;
+use algebra_core::{PairingEngine,test_rng};
+use algebra::{
+    One,
+    Zero,
+    ProjectiveCurve,
+    UniformRand,
+    bls12_381::{
+        g1, g2, Bls12_381, Fq, Fq12, Fq2, Fr, G1Affine, G1Projective, G2Affine, G2Projective,
+    }
+};
 
 use crate::matrix::*;
 
-pub type SnarkMtx = Matrix<G1>;
 
-pub struct PP
+//pub type VecG = Vec<G1>;
+
+
+pub struct PP<G1: Clone,G2: Clone>
 {
-pub     l: usize,
-pub     t: usize,
-pub    rng: ThreadRng,
+    pub     l: usize,
+    pub     t: usize,
+    pub     g1: G1,
+    pub     g2: G2,
 }
 
-impl PP {
-    pub fn new(l: usize, t: usize) -> PP {
-        PP {l:l, t:t, rng:rand::thread_rng()}
-    }
-
-    pub fn randomFldElem(&mut self) -> Fr {
-        //Fr::random(&mut self.rng)
-        unimplemented!();    
+impl<G1: Clone,G2: Clone> PP<G1,G2> {
+    pub fn new(l: usize, t: usize, g1: &G1, g2: &G2) -> PP<G1,G2> {
+        PP {l:l, t:t, g1: g1.clone(), g2: g2.clone() }
     }
 }
 
-
-pub struct EK {
-    p: VecG,
+pub struct EK<G1> {
+    p: Vec<G1>,
 }
-pub struct VK {
+pub struct VK<G2> {
     c: Vec<G2>,
     a: G2,
 }
 
-pub type Crs = (EK, VK);
-
-pub type Proof = G1;
-
-// Change so that allocation occurs earlier
-
-
-pub fn vec_to_G2(v: & Vec<Fr>) ->  Vec< G2>
+pub trait SubspaceSnark
 {
-    c![G2::one()* *x, for x in v]
+
+    type KMtx;
+    type InVec;
+    type OutVec;
+
+    type PP;
+
+    type EK;
+    type VK;
+    type Crs = (Self::EK, Self::VK);
+
+    type Proof;
+
+    fn keygen<R:Rng>(rng: &mut R, pp: &Self::PP, m: Self::KMtx) -> Self::Crs;
+    fn prove(pp : &Self::PP, ek: &Self::EK, x: &Self::InVec) -> Self::Proof;
+    fn verify(pp : &Self::PP, vk: &Self::VK, y: &Self::OutVec, pi: &Self::Proof) -> bool;
+
+}
+
+
+fn vec_to_G2<PE: PairingEngine>(pp: &PP<PE::G1Projective,PE::G2Projective>, v: & Vec<PE::Fr>) ->  Vec<PE::G2Projective>
+{
+    c![ pp.g2.mul(*x), for x in v]
 }
 
 // NB: Now the system is for y = Mx
-
-pub fn keygen(pp: &mut PP, m: SnarkMtx) -> Crs
+impl<PE> SubspaceSnark for PE
+    where PE: PairingEngine + SparseLinAlgebra<PE>
 {
-    let mut k: Vec<Fr>  = Vec::with_capacity(pp.l);
-    for _ in 0..pp.l {
-        k.push(pp.randomFldElem());
+    
+    type KMtx = Matrix<PE::G1Projective>;
+    type InVec = Vec<PE::Fr>;
+    type OutVec = Vec<PE::G1Projective>;
+
+    type PP = PP<PE::G1Projective, PE::G2Projective>;
+
+    type EK = EK<PE::G1Projective>;
+    type VK = VK<PE::G2Projective>;
+
+    type Proof = PE::G1Projective;
+
+
+    fn keygen<R:Rng>(rng: &mut R, pp: &Self::PP, m: Self::KMtx) -> Self::Crs
+    {
+        let mut k: Vec<PE::Fr>  = Vec::with_capacity(pp.l);
+        for _ in 0..pp.l {
+            k.push(PE::Fr::rand(rng));
+        }
+
+        let a = PE::Fr::rand(rng);
+        let mut p: Vec<PE::G1Projective> = Vec::with_capacity(pp.t);
+
+        PE::vector_matrix_mult(&k, &m, &mut p);
+        let mut c: Vec<PE::Fr> = Vec::with_capacity(pp.l);
+
+        PE::scalar_vector_mult(&a, &k, &mut c);
+        let ek = EK::<PE::G1Projective> {p:p};
+        let vk = VK::<PE::G2Projective> {c: vec_to_G2::<PE>(pp, &c), a: pp.g2.clone().mul(a)};
+        (ek, vk)
+    }
+    
+    fn prove(pp : &Self::PP, ek: &Self::EK, x: &Self::InVec) -> Self::Proof {
+        assert_eq!(pp.t, x.len());
+        PE::inner_product(x, &ek.p) as Self::Proof
     }
 
-    let a = pp.randomFldElem();
-    let mut p: Vec<G1> = Vec::with_capacity(pp.t);
+    fn verify(pp : &Self::PP, vk: &Self::VK, y: &Self::OutVec, pi: &Self::Proof) -> bool {
+        assert_eq!(pp.l, y.len());
 
-    vector_matrix_mult(&k, &m, &mut p, G1::zero());
-    let mut c: Vec<Fr> = Vec::with_capacity(pp.l);
-
-    scalar_vector_mult(&a, &k, &mut c);
-    (EK {p:p}, VK {c: vec_to_G2(&c), a: G2::one()*a})
-}
-
-pub fn prove(pp : &mut PP, ek: &EK,x: &Vec<Fr>) -> G1 {
-    assert_eq!(pp.l, x.len());
-    inner_product(x, &ek.p, G1::zero())
-}
-
-pub fn verify(pp : &PP, vk: &VK, y: &VecG, pi: &Proof) -> bool {
-    assert_eq!(pp.t, y.len());
-
-    let mut res = Gt::one();
-    for i in 0..y.len() {
-        res = res * pairing(y[i],vk.c[i]);
+        let mut res = PE::Fqk::one();
+        for i in 0..y.len() {
+            res *= &PE::pairing(y[i], vk.c[i]);
+        }
+        res == PE::pairing(*pi, vk.a)
     }
-    res == pairing(*pi, vk.a)
+    
 }
 
+
+
+/*
 
 #[cfg(test)]
 mod tests {
@@ -120,3 +164,5 @@ mod tests {
 
     }
 }
+*/
+
