@@ -56,7 +56,8 @@ pub fn test() {
     
     let mut pp =  PP::<G1Projective, G2Projective> {l:1, t: 2, g1, g2};
 
-    let m = Matrix::new(1, 2, &vec![g1, g1]);
+    let mut m = SparseMatrix::new(1, 2);
+    m.insert_row_slice(0, 0, &vec![g1, g1]);
 
     let x:Vec<Fr> = vec![Fr::one(), Fr::zero()];
 

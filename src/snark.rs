@@ -22,8 +22,8 @@ use crate::matrix::*;
 
 pub struct PP<G1: Clone,G2: Clone>
 {
-    pub     l: usize,
-    pub     t: usize,
+    pub     l: usize, // # of rows
+    pub     t: usize, // # of cols
     pub     g1: G1,
     pub     g2: G2,
 }
@@ -74,7 +74,7 @@ impl<PE> SubspaceSnark for PE
     where PE: PairingEngine + SparseLinAlgebra<PE>
 {
     
-    type KMtx = Matrix<PE::G1Projective>;
+    type KMtx = SparseMatrix<PE::G1Projective>;
     type InVec = Vec<PE::Fr>;
     type OutVec = Vec<PE::G1Projective>;
 
@@ -96,18 +96,18 @@ impl<PE> SubspaceSnark for PE
         let a = PE::Fr::rand(rng);
         let mut p: Vec<PE::G1Projective> = Vec::with_capacity(pp.t);
 
-        PE::vector_matrix_mult(&k, &m, &mut p);
+        PE::sparse_vector_matrix_mult(&k, &m, &mut p);
         let mut c: Vec<PE::Fr> = Vec::with_capacity(pp.l);
 
-        PE::scalar_vector_mult(&a, &k, &mut c);
+        scalar_vector_mult::<PE>(&a, &k, &mut c);
         let ek = EK::<PE::G1Projective> {p:p};
-        let vk = VK::<PE::G2Projective> {c: vec_to_G2::<PE>(pp, &c), a: pp.g2.clone().mul(a)};
+        let vk = VK::<PE::G2Projective> {c: vec_to_G2::<PE>(pp, &c), a: pp.g2.mul(a)};
         (ek, vk)
     }
     
     fn prove(pp : &Self::PP, ek: &Self::EK, x: &Self::InVec) -> Self::Proof {
         assert_eq!(pp.t, x.len());
-        PE::inner_product(x, &ek.p) as Self::Proof
+        inner_product::<PE>(x, &ek.p) as Self::Proof
     }
 
     fn verify(pp : &Self::PP, vk: &Self::VK, y: &Self::OutVec, pi: &Self::Proof) -> bool {
