@@ -8,7 +8,7 @@ use algebra::Zero;
     CoeffPos: A struct to help build sparse matrices.
 */
 #[derive(Clone, Debug)]
-struct CoeffPos<T>
+pub struct CoeffPos<T>
 {
     val:T,
     pos: usize

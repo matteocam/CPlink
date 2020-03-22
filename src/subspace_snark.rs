@@ -1,7 +1,5 @@
-//extern crate bn;
 extern crate rand;
 
-//use bn::*;
 use rand::Rng;
 use algebra_core::{PairingEngine,test_rng};
 use algebra::{
@@ -15,9 +13,6 @@ use algebra::{
 };
 
 use crate::matrix::*;
-
-
-//pub type VecG = Vec<G1>;
 
 
 pub struct PP<G1: Clone,G2: Clone>

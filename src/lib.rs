@@ -5,7 +5,7 @@
 extern crate cute;
 
 mod matrix;
-mod snark;
+mod subspace_snark;
 
 //extern crate bn;
 extern crate rand;
@@ -18,7 +18,7 @@ extern crate rand_xorshift;
 //use bn::*;
 
 use crate::matrix::*;
-use crate::snark::*;
+use crate::subspace_snark::*;
 
 use rand::Rng;
 
