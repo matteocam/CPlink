@@ -6,8 +6,8 @@ extern crate cute;
 
 mod matrix;
 mod subspace_snark;
+mod linking_snark;
 
-//extern crate bn;
 extern crate rand;
 
 extern crate rug;
@@ -19,6 +19,7 @@ extern crate rand_xorshift;
 
 use crate::matrix::*;
 use crate::subspace_snark::*;
+use crate::linking_snark::*;
 
 use rand::Rng;
 
