@@ -11,7 +11,7 @@ accumulator = { path = "./accumulator" }
 quick-error = "1.2.3"
 rug = "1.7.0"
 algebra-core = { path = "./zexe/algebra-core" }
-algebra = { path = "./zexe/algebra", features = ["jubjub"]}
+algebra = { path = "./zexe/algebra", features = ["bls12_381"]}
 merlin = "2.0.0"
 rand = { version = "0.7"}
 cpsnarks-set = { path = "./cpsnarks-set" }

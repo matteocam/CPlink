@@ -67,10 +67,10 @@ pub fn test() {
 
     let y:Vec<G1Projective> = vec![g1];
 
-    let (ek, vk) = Bls12_381::keygen(&mut rng, &pp, m);
+    let (ek, vk) = Bls12_381::keygen(&mut rng, &pp, &m);
 
-    let pi = Bls12_381::prove(&mut pp, &ek, &x);
-    let pi_bad = Bls12_381::prove(&mut pp, &ek, &x_bad);
+    let pi = Bls12_381::prove(&pp, &ek, &x);
+    let pi_bad = Bls12_381::prove(&pp, &ek, &x_bad);
 
     let b = Bls12_381::verify(&pp, &vk, &y, &pi);
     let b_bad = Bls12_381::verify(&pp, &vk, &y, &pi_bad);

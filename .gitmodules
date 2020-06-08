@@ -1,9 +1,3 @@
-[submodule "cpsnarks-set"]
-	path = cpsnarks-set
-	url = https://github.com/kobigurk/cpsnarks-set.git
 [submodule "cpsnarks-set-zexe"]
 	path = zexe
 	url = https://github.com/kobigurk/cpsnarks-set-zexe.git
-[submodule "cpsnarks-set-accumulator"]
-	path = accumulator
-	url = https://github.com/kobigurk/cpsnarks-set-accumulator.git

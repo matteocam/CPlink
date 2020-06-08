@@ -15,7 +15,7 @@ use algebra::{
 use crate::matrix::*;
 
 
-pub struct PP<G1: Clone,G2: Clone>
+pub struct SubspacePP<G1: Clone,G2: Clone>
 {
     pub     l: usize, // # of rows
     pub     t: usize, // # of cols
@@ -23,9 +23,9 @@ pub struct PP<G1: Clone,G2: Clone>
     pub     g2: G2,
 }
 
-impl<G1: Clone,G2: Clone> PP<G1,G2> {
-    pub fn new(l: usize, t: usize, g1: &G1, g2: &G2) -> PP<G1,G2> {
-        PP {l:l, t:t, g1: g1.clone(), g2: g2.clone() }
+impl<G1: Clone,G2: Clone> SubspacePP<G1,G2> {
+    pub fn new(l: usize, t: usize, g1: &G1, g2: &G2) -> SubspacePP<G1,G2> {
+        SubspacePP {l:l, t:t, g1: g1.clone(), g2: g2.clone() }
     }
 }
 
@@ -39,7 +39,6 @@ pub struct VK<G2> {
 
 pub trait SubspaceSnark
 {
-
     type KMtx;
     type InVec;
     type OutVec;
@@ -52,7 +51,7 @@ pub trait SubspaceSnark
 
     type Proof;
 
-    fn keygen<R:Rng>(rng: &mut R, pp: &Self::PP, m: Self::KMtx) -> Self::Crs;
+    fn keygen<R:Rng>(rng: &mut R, pp: &Self::PP, m: &Self::KMtx) -> Self::Crs;
     fn prove(pp : &Self::PP, ek: &Self::EK, x: &Self::InVec) -> Self::Proof;
     fn verify(pp : &Self::PP, vk: &Self::VK, y: &Self::OutVec, pi: &Self::Proof) -> bool;
 
@@ -73,7 +72,7 @@ impl<PE> SubspaceSnark for PE
     type InVec = Vec<PE::Fr>;
     type OutVec = Vec<PE::G1Projective>;
 
-    type PP = PP<PE::G1Projective, PE::G2Projective>;
+    type PP = SubspacePP<PE::G1Projective, PE::G2Projective>;
 
     type EK = EK<PE::G1Projective>;
     type VK = VK<PE::G2Projective>;
@@ -81,7 +80,7 @@ impl<PE> SubspaceSnark for PE
     type Proof = PE::G1Projective;
 
 
-    fn keygen<R:Rng>(rng: &mut R, pp: &Self::PP, m: Self::KMtx) -> Self::Crs
+    fn keygen<R:Rng>(rng: &mut R, pp: &Self::PP, m: &Self::KMtx) -> Self::Crs
     {
         let mut k: Vec<PE::Fr>  = Vec::with_capacity(pp.l);
         for _ in 0..pp.l {
