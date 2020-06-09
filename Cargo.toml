@@ -7,14 +7,12 @@ edition = "2018"
 [dependencies]
 cute = "0.3.0"
 
-accumulator = { path = "./accumulator" }
 quick-error = "1.2.3"
 rug = "1.7.0"
 algebra-core = { path = "./zexe/algebra-core" }
 algebra = { path = "./zexe/algebra", features = ["bls12_381"]}
 merlin = "2.0.0"
 rand = { version = "0.7"}
-cpsnarks-set = { path = "./cpsnarks-set" }
 rand_xorshift = "0.2"
 
 
@@ -25,6 +23,3 @@ rand_xorshift = "0.2"
 name = "cplink"
 path = "src/lib.rs"
 
-[[bin]]
-name = "cplink_bin"
-path = "src/bin.rs"

@@ -1,109 +1,83 @@
-#![feature(associated_type_defaults)]
-#![allow(non_snake_case)]
 #[macro_use]
 
-extern crate cute;
-
 mod matrix;
-mod subspace_snark;
-mod linking_snark;
+mod snark;
 
-extern crate rand;
+pub use matrix::*;
+pub use snark::*;
 
-extern crate rug;
-extern crate algebra;
+#[cfg(test)]
+mod test {
+    use super::{PESubspaceSnark, SparseMatrix, SubspaceSnark, PP};
+    use algebra::{
+        bls12_381::{Bls12_381, Fr, G1Affine, G1Projective, G2Affine, G2Projective},
+        test_rng, AffineCurve, One, ProjectiveCurve, UniformRand, Zero,
+    };
 
-extern crate rand_xorshift;
+    #[test]
+    fn test_basic() {
+        let mut rng = test_rng();
+        let g1 = G1Projective::rand(&mut rng).into_affine();
+        let g2 = G2Projective::rand(&mut rng).into_affine();
 
-//use bn::*;
+        let mut pp = PP::<G1Affine, G2Affine> { l: 1, t: 2, g1, g2 };
 
-use crate::matrix::*;
-use crate::subspace_snark::*;
-use crate::linking_snark::*;
+        let mut m = SparseMatrix::new(1, 2);
+        m.insert_row_slice(0, 0, &vec![g1, g1]);
 
-use rand::Rng;
+        let x: Vec<Fr> = vec![Fr::one(), Fr::zero()];
 
-use cpsnarks_set::commitments::{
-    integer::IntegerCommitment, pedersen::PedersenCommitment, Commitment,
-};
+        let x_bad: Vec<Fr> = vec![Fr::one(), Fr::one()];
 
+        let y: Vec<G1Affine> = vec![g1];
 
+        let (ek, vk) = PESubspaceSnark::<Bls12_381>::keygen(&mut rng, &pp, m);
 
-use algebra_core::test_rng;
-use std::ops::Add;
-use algebra::{
-    Zero,
-    One,
-    ProjectiveCurve,
-    UniformRand,
-    bls12_381::{
-        g1, g2, Bls12_381, Fq, Fq12, Fq2, Fr, G1Affine, G1Projective, G2Affine, G2Projective,
+        let pi = PESubspaceSnark::<Bls12_381>::prove(&mut pp, &ek, &x);
+        let pi_bad = PESubspaceSnark::<Bls12_381>::prove(&mut pp, &ek, &x_bad);
+
+        let b = PESubspaceSnark::<Bls12_381>::verify(&pp, &vk, &y, &pi);
+        let b_bad = PESubspaceSnark::<Bls12_381>::verify(&pp, &vk, &y, &pi_bad);
+        assert!(b);
+        assert!(!b_bad);
     }
-};
 
-impl SparseLinAlgebra<Bls12_381> for Bls12_381 { } 
+    #[test]
+    fn test_same_value_different_bases() {
+        let mut rng = test_rng();
+        let g1 = G1Projective::rand(&mut rng).into_affine();
+        let g2 = G2Projective::rand(&mut rng).into_affine();
 
+        let mut pp = PP::<G1Affine, G2Affine> { l: 2, t: 3, g1, g2 };
 
-pub fn test() {
-    
-    use rug::Integer;
-    use algebra::jubjub::JubJubProjective;
-    //use rand_xorshift::XorShiftRng;
-    //use rand::SeedableRng;
+        let bases1 = [G1Projective::rand(&mut rng), G1Projective::rand(&mut rng)]
+            .iter()
+            .map(|p| p.into_affine())
+            .collect::<Vec<_>>();
+        let bases2 = [G1Projective::rand(&mut rng), G1Projective::rand(&mut rng)]
+            .iter()
+            .map(|p| p.into_affine())
+            .collect::<Vec<_>>();
+        let mut m = SparseMatrix::new(2, 3);
+        m.insert_row_slice(0, 0, &vec![bases1[0]]);
+        m.insert_row_slice(0, 2, &vec![bases1[1]]);
+        m.insert_row_slice(1, 1, &vec![bases2[0], bases2[1]]);
 
-    let mut rng = test_rng();
-    let g1 = G1Projective::rand(&mut rng);
-    let g2 = G2Projective::rand(&mut rng);
-    
-    let mut pp =  PP::<G1Projective, G2Projective> {l:1, t: 2, g1, g2};
+        let x: Vec<Fr> = vec![Fr::rand(&mut rng), Fr::rand(&mut rng), Fr::rand(&mut rng)];
 
-    let mut m = SparseMatrix::new(1, 2);
-    m.insert_row_slice(0, 0, &vec![g1, g1]);
+        let y: Vec<G1Affine> = vec![
+            bases1[0].into_projective().mul(x[0]) + bases1[1].mul(x[2]),
+            bases2[0].into_projective().mul(x[1]) + bases2[1].mul(x[2]),
+        ]
+        .into_iter()
+        .map(|p| p.into_affine())
+        .collect::<Vec<_>>();
 
-    let x:Vec<Fr> = vec![Fr::one(), Fr::zero()];
+        let (ek, vk) = PESubspaceSnark::<Bls12_381>::keygen(&mut rng, &pp, m);
 
-    let x_bad:Vec<Fr> = vec![Fr::one(), Fr::one()];
+        let pi = PESubspaceSnark::<Bls12_381>::prove(&mut pp, &ek, &x);
 
-
-    let y:Vec<G1Projective> = vec![g1];
-
-    let (ek, vk) = Bls12_381::keygen(&mut rng, &pp, &m);
-
-    let pi = Bls12_381::prove(&pp, &ek, &x);
-    let pi_bad = Bls12_381::prove(&pp, &ek, &x_bad);
-
-    let b = Bls12_381::verify(&pp, &vk, &y, &pi);
-    let b_bad = Bls12_381::verify(&pp, &vk, &y, &pi_bad);
-
-
-    println!("Result is {}.", b);
-    println!("Result is {}.", b_bad);
-
-
-    //let val:G1Projective = Bls12_381::inner_product(&vec![s, s], &vec![a, a]);
-
-
-
-    /*
-
-    let rng = rand::thread_rng();
-
-    let mut pp = PP {l:1, t: 2, rng:rng};
-
-    let m = Matrix::new(pp.l, pp.t, &vec![G1::one(), G1::one()]);
-
-    let x:Vec<Fr> = vec![Fr::one(), Fr::zero()];
-
-    let y:Vec<G1> = vec![G1::one()];
-
-    let (ek, vk) = keygen(&mut pp, m);
-
-    let pi = prove(&mut pp, &ek, &x);
-
-    let b = verify(&pp, &vk, &y, &pi);
-
-    println!("Result is {}.", b);
-
-    */
-
+        let b = PESubspaceSnark::<Bls12_381>::verify(&pp, &vk, &y, &pi);
+        assert!(b);
+    }
 }
